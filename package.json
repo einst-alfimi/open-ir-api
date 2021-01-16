@@ -1,0 +1,19 @@
+{
+  "name": "open-ir-api",
+  "version": "1.0.0",
+  "description": "Internet ranking api for beatoraja ",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "bms"
+  ],
+  "author": "einst",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.1",
+    "mariadb": "^2.5.2",
+    "sequelize": "^6.3.5"
+  }
+}
