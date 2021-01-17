@@ -2,8 +2,16 @@
 
 IR api for beatoraja
 
+## require
+
 - mariadb
 
 - Node
 
-v14.15.4
+node v14.15.4
+
+sequelize-cli
+
+## migration
+
+`npx sequelize-cli db:migrate`
