@@ -34,60 +34,84 @@ app.post('/login', async (req, res) => {
 });
 
 // get all score
-app.get('/userscore/:user_id', (req, res) => {
-    console.log(req.params.user_id);
-    console.log(req.body);
-    res.status(200).send({status: 'ok'});
+app.get('/userscore/:user_id', async (req, res) => {
+    console.log("find score by user_id");
+    const scores = Score.findAll({where: {user_id: req.params.user_id}});
+    res.status(200).send(scores);
 });
 
-// get all song score
-app.get('/score/:sha256', (req, res) => {
-    console.log(req.params.sha256);
-    console.log(req.body);
-    res.status(200).send({status: 'ok'});
+// get all song score by lntype
+app.get('/score/:sha256/:lntype', async (req, res) => {
+    console.log("find score by sha256");
+    const scores = await Score.findAll({where: req.params, include: User, row: true});
+    const response = scores.map((item) => {
+        let newItem = item.dataValues;
+        newItem.player = item.User.name;
+        delete newItem.User;
+        return newItem;
+    });
+    res.status(200).send(response);
 });
 
 // get score from user_id + hash
-app.get('/userscore/:user_id/:sha256', (req, res) => {
-    console.log(req.params.user_id);
-    console.log(req.body);
-    res.status(200).send({status: 'ok'});
+app.get('/userscore/:user_id/:sha256', async (req, res) => {
+    console.log("find score by sha256 and user_id");
+    const scores = await Score.findAll({where: {user_id: req.params.user_id, sha256: req.params.sha256}});
+    const response = scores.map((item) => {
+        item.user_name = item.User.user_name;
+        delete item.User;
+        console.log(item);
+        return item;
+    });
+    res.status(200).send(scores);
 });
 
 // send score
 app.post('/score', async (req, res) => {
-    console.log(req.headers);
-    console.log(req.body);
+    console.log("submit score");
+    console.log(req.body.playCount);
+
+    // console.log(req.headers);
+    // console.log(req.body);
     let reqSong = await Song.findOne({where: {sha256: req.body.model.sha256} });
     if(!reqSong) {
-        // submit song info
+        console.log("submit song info");
         const model = req.body.model;
         reqSong = await Song.create(model);
     }
     // submit score info
     // TODO get user info from session ...
     const user_id = 1;
-    const where = {where: {sha256: req.body.model.sha256, user_id: user_id, lntype: req.body.model.lntype}};
+    const lntype = req.body.model.hasUndefinedLN ? req.body.model.lntype : 0;
+    const where = {where: {sha256: req.body.model.sha256, user_id, lntype}};
     let updateScore = req.body.score;
+    updateScore.lntype = lntype;
     let localscore = await Score.findOne(where);
-    console.log(localscore);
     if (localscore) { 
-        // update score
         console.log("update Score");
+        let hasUpdate = true;
         if (calcExScore(localscore) > calcExScore(req.body.score)){
             updateScore = localscore;
-        }
+            hasUpdate = false;
+        } 
         updateScore.user_id = user_id;
         // clear lump update
         if (convertClearType(localscore.clear) < convertClearType(req.body.score.clear)) {
-            updateScore.clear = req.body.score.clear;
+            updateScore.clear = req.body.score.clear; // 更新したとき
+            hasUpdate = true;
         } else {
-            updateScore.clear = localscore.clear;
+            updateScore.clear = localscore.clear; // 現状のが良いとき
+            hasUpdate = hasUpdate ?? false;
         }
-        reqScore.update(updateScore, where);
+        if(hasUpdate) {
+            console.log("has update.");
+            localscore.update(updateScore, where);
+        } else {
+            console.log("has no update.");
+        }
     } else {
         // new score
-        console.log("new Score");
+        console.log("create new Score");
         updateScore.user_id = user_id;
         localscore = await Score.create(updateScore);
     }

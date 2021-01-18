@@ -74,10 +74,28 @@ module.exports = {
       notes: {
         type: Sequelize.INTEGER
       },
+      passnotes: {
+        type: Sequelize.INTEGER
+      },
+      minbp: {
+        type: Sequelize.INTEGER
+      },
       option: {
         type: Sequelize.INTEGER
       },
+      assist: {
+        type: Sequelize.INTEGER
+      },
+      gauge: {
+        type: Sequelize.INTEGER
+      },
       deviceType: {
+        type: Sequelize.STRING
+      },
+      judgeAlgorithm: {
+        type: Sequelize.STRING
+      },
+      rule: {
         type: Sequelize.STRING
       },
       createdAt: {

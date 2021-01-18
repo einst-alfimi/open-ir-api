@@ -31,11 +31,20 @@ module.exports = (sequelize, DataTypes) => {
     ems: DataTypes.INTEGER,
     maxcombo: DataTypes.INTEGER,
     notes: DataTypes.INTEGER,
+    passnotes: DataTypes.INTEGER,
+    minbp: DataTypes.INTEGER,
     option: DataTypes.INTEGER,
+    assist: DataTypes.INTEGER,
+    gauge: DataTypes.INTEGER,
     deviceType: DataTypes.INTEGER,
+    judgeAlgorithm: DataTypes.STRING,
+    rule: DataTypes.STRING,
   }, {
     sequelize,
     modelName: 'Score',
   });
+  Score.associate = models => {
+    Score.belongsTo(models.User, {foreignKey: 'user_id', targetKey: "id"});
+  }
   return Score;
 };
