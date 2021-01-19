@@ -12,6 +12,10 @@ node v14.15.4
 
 sequelize-cli
 
+- memcached
+
+for session.
+
 ## migration
 
 `npx sequelize-cli db:migrate`

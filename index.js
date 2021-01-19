@@ -1,6 +1,12 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const Sequelize = require('sequelize');
+
+const Memcached = require('memcached');
+const memcached = new Memcached("localhost"); // TODO
+
+const crypto = require('crypto');
+
 const bcrypt = require('bcrypt');
 const User = require('./models').User;
 const Score = require('./models').Score;
@@ -28,7 +34,9 @@ app.post('/login', async (req, res) => {
         return;
     } else {
         console.log(`${req.body.id} is logged in.`);
-        res.status(200).send({status: 'ok'});
+        const token = getSession();
+        memcached.add(token, req.body.id, 1800, (err) => { /* stuff */ });
+        res.status(200).send({status: 'ok', accessToken: token});
         return;
     }
 });
@@ -43,10 +51,18 @@ app.get('/userscore/:user_id', async (req, res) => {
 // get all song score by lntype
 app.get('/score/:sha256/:lntype', async (req, res) => {
     console.log("find score by sha256");
+    let loggedInUserId = "";
+    memcached.get(req.header('accessToken'), (err, data) => {
+        memcached.touch(req.header('accessToken'), 1800);
+        loggedInUserId = data; // session check
+    });
+
     const scores = await Score.findAll({where: req.params, include: User, row: true});
     const response = scores.map((item) => {
         let newItem = item.dataValues;
-        newItem.player = item.User.name;
+        // if login user score, remove player name.
+        newItem.player = item.User.name === loggedInUserId ? "" : item.User.name;
+        newItem.clear = convertClearType(newItem.clear);
         delete newItem.User;
         return newItem;
     });
@@ -58,10 +74,10 @@ app.get('/userscore/:user_id/:sha256', async (req, res) => {
     console.log("find score by sha256 and user_id");
     const scores = await Score.findAll({where: {user_id: req.params.user_id, sha256: req.params.sha256}});
     const response = scores.map((item) => {
-        item.user_name = item.User.user_name;
-        delete item.User;
-        console.log(item);
-        return item;
+        let newItem = item.dataValues;
+        newItem.player = item.User.name;
+        delete newItem.User;
+        return newItem;
     });
     res.status(200).send(scores);
 });
@@ -153,6 +169,12 @@ const convertClearType = (clearstr) => {
 const calcExScore = (model) => {
     return 2 * (model.epg + model.lpg) + model.epg + model.lpg;
 };
+
+const getSession = () => {
+    const S="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    const N=16;
+    return Array.from(crypto.randomFillSync(new Uint8Array(N))).map((n)=>S[n%S.length]).join('');
+}
 
 
 const server = http.createServer(app);
