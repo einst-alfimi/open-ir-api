@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const Sequelize = require('sequelize');
+const util = require('util');
 
 const Memcached = require('memcached');
 const memcached = new Memcached("localhost"); // TODO
@@ -51,11 +52,8 @@ app.get('/userscore/:user_id', async (req, res) => {
 // get all song score by lntype
 app.get('/score/:sha256/:lntype', async (req, res) => {
     console.log("find score by sha256");
-    let loggedInUserId = "";
-    memcached.get(req.header('accessToken'), (err, data) => {
-        memcached.touch(req.header('accessToken'), 1800);
-        loggedInUserId = data; // session check
-    });
+    const memcachedGet = util.promisify(memcached.get).bind(memcached);
+    const loggedInUserId = await memcachedGet(req.header('accessToken'));
 
     const scores = await Score.findAll({where: req.params, include: User, row: true});
     const response = scores.map((item) => {
@@ -85,10 +83,15 @@ app.get('/userscore/:user_id/:sha256', async (req, res) => {
 // send score
 app.post('/score', async (req, res) => {
     console.log("submit score");
-    console.log(req.body.playCount);
 
-    // console.log(req.headers);
-    // console.log(req.body);
+    const memcachedGet = util.promisify(memcached.get).bind(memcached);
+    const loggedInUserId = await memcachedGet(req.header('accessToken'));
+    if (!loggedInUserId) {
+        console.warn("no login with push score.");
+        res.status(401).send({status: 'ng, you need login.'});
+        return ;
+    }
+    console.log(req.body.playCount);
     let reqSong = await Song.findOne({where: {sha256: req.body.model.sha256} });
     if(!reqSong) {
         console.log("submit song info");
@@ -175,7 +178,6 @@ const getSession = () => {
     const N=16;
     return Array.from(crypto.randomFillSync(new Uint8Array(N))).map((n)=>S[n%S.length]).join('');
 }
-
 
 const server = http.createServer(app);
 server.listen(port);
