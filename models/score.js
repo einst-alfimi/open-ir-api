@@ -16,7 +16,7 @@ module.exports = (sequelize, DataTypes) => {
   Score.init({
     sha256: DataTypes.STRING,
     user_id: DataTypes.INTEGER,
-    clear: DataTypes.STRING,
+    clear: DataTypes.INTEGER,
     lntype: DataTypes.INTEGER,
     epg: DataTypes.INTEGER,
     lpg: DataTypes.INTEGER,
@@ -39,6 +39,7 @@ module.exports = (sequelize, DataTypes) => {
     deviceType: DataTypes.INTEGER,
     judgeAlgorithm: DataTypes.STRING,
     rule: DataTypes.STRING,
+    type: DataTypes.STRING,
   }, {
     sequelize,
     modelName: 'Score',

@@ -8,7 +8,7 @@ module.exports = {
     const hash = bcrypt.hashSync(myPlaintextPassword, saltRounds);
     // TODO uniqueIDの生成方法は考える
     return queryInterface.bulkInsert('Users', [
-      { name: 'test-user',  unique: 'uniqueid', password: hash, createdAt: now, updatedAt: now},
+      { name: 'test-user',  display: 'テストユーザ1', password: hash,status: 1, createdAt: now, updatedAt: now},
     ], {});
   },
   down: async (queryInterface, Sequelize) => {

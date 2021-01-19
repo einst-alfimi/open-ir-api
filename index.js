@@ -59,8 +59,7 @@ app.get('/score/:sha256/:lntype', async (req, res) => {
     const response = scores.map((item) => {
         let newItem = item.dataValues;
         // if login user score, remove player name.
-        newItem.player = item.User.name === loggedInUserId ? "" : item.User.name;
-        newItem.clear = convertClearType(newItem.clear);
+        newItem.player = item.User.name === loggedInUserId ? "" : item.User.display;
         delete newItem.User;
         return newItem;
     });
@@ -91,6 +90,8 @@ app.post('/score', async (req, res) => {
         res.status(401).send({status: 'ng, you need login.'});
         return ;
     }
+    memcached.toush(req.header('accessToken'));
+    
     console.log(req.body.playCount);
     let reqSong = await Song.findOne({where: {sha256: req.body.model.sha256} });
     if(!reqSong) {
@@ -99,10 +100,9 @@ app.post('/score', async (req, res) => {
         reqSong = await Song.create(model);
     }
     // submit score info
-    // TODO get user info from session ...
-    const user_id = 1;
+    const user = await User.findOne({where: {name: loggedInUserId} });
     const lntype = req.body.model.hasUndefinedLN ? req.body.model.lntype : 0;
-    const where = {where: {sha256: req.body.model.sha256, user_id, lntype}};
+    const where = {where: {sha256: req.body.model.sha256, user_id: user.id, lntype}};
     let updateScore = req.body.score;
     updateScore.lntype = lntype;
     let localscore = await Score.findOne(where);
@@ -113,10 +113,10 @@ app.post('/score', async (req, res) => {
             updateScore = localscore;
             hasUpdate = false;
         } 
-        updateScore.user_id = user_id;
-        // clear lump update
-        if (convertClearType(localscore.clear) < convertClearType(req.body.score.clear)) {
-            updateScore.clear = req.body.score.clear; // 更新したとき
+        updateScore.user_id = user.id;
+        // clear lump update, requestはnumberにコンバート
+        if (localscore.clear < convertClearType(req.body.score.clear)) {
+            updateScore.clear = convertClearType(req.body.score.clear); // 更新したとき
             hasUpdate = true;
         } else {
             updateScore.clear = localscore.clear; // 現状のが良いとき
@@ -131,7 +131,8 @@ app.post('/score', async (req, res) => {
     } else {
         // new score
         console.log("create new Score");
-        updateScore.user_id = user_id;
+        updateScore.user_id = user.id;
+        updateScore.clear = convertClearType(updateScore.clear);
         localscore = await Score.create(updateScore);
     }
     res.status(200).send({status: 'ok'});

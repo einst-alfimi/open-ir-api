@@ -8,14 +8,20 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      name: {
+      name: { // login_id
         type: Sequelize.STRING
       },
-      unique: {
+      unique: { // unique_id for page
+        type: Sequelize.STRING
+      },
+      display: { // display name
         type: Sequelize.STRING
       },
       password: {
         type: Sequelize.STRING
+      },
+      status: { // 0:disable 1:enable 2:view only(convert lr2)
+        type: Sequelize.INTEGER
       },
       createdAt: {
         allowNull: false,

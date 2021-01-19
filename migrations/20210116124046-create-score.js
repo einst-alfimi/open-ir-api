@@ -26,7 +26,7 @@ module.exports = {
         // FullCombo 8
         // Perfect 9
         // Max 10
-        type: Sequelize.STRING
+        type: Sequelize.INTEGER
       },
       lntype: {
         // 0=LN 1=CN 2=HCN
@@ -96,6 +96,9 @@ module.exports = {
         type: Sequelize.STRING
       },
       rule: {
+        type: Sequelize.STRING
+      },
+      type: {
         type: Sequelize.STRING
       },
       createdAt: {
