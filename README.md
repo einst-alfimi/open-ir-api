@@ -18,4 +18,6 @@ for session.
 
 ## migration
 
-`npx sequelize-cli db:migrate`
+`npm run migrate`
+
+all reset.
