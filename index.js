@@ -12,6 +12,9 @@ const bcrypt = require('bcrypt');
 const User = require('./models').User;
 const Score = require('./models').Score;
 const Song = require('./models').Song;
+const Rival = require('./models').Rival;
+
+const strUtil = require('./util/str');
 
 const http = require('http');
 const app = express();
@@ -35,31 +38,41 @@ app.post('/login', async (req, res) => {
         return;
     } else {
         console.log(`${req.body.id} is logged in.`);
-        const token = getSession();
-        memcached.add(token, req.body.id, 1800, (err) => { /* stuff */ });
-        res.status(200).send({status: 'ok', accessToken: token});
+        const token = strUtil.randomStr();
+        memcached.add(token, {id: req.body.id, unique: user.unique}, 1800, (err) => { /* stuff */ });
+        res.status(200).send({status: 'ok', accessToken: token, unique: user.unique});
         return;
     }
 });
 
 // get all score
-app.get('/userscore/:user_id', async (req, res) => {
-    console.log("find score by user_id");
-    const scores = Score.findAll({where: {user_id: req.params.user_id}});
-    res.status(200).send(scores);
+app.get('/userscore/:unique', async (req, res) => {
+    console.log("find score by user.unique");
+    const scores = await Score.findAll({where: {"$User.unique$": req.params.unique}, include: User, row: true});
+    res.status(200).send(scores.map((item) => {
+        const newItem = item.dataValues;
+        newItem.player = item.User.display; // IDなのか？
+        // newItem.player = item.User.unique; 
+        newItem.mode = item.lntype;
+        delete newItem.User;
+        return newItem;
+    }));
 });
 
 // get all song score by lntype
 app.get('/score/:sha256/:lntype', async (req, res) => {
     console.log("find score by sha256");
     const memcachedGet = util.promisify(memcached.get).bind(memcached);
-    const loggedInUserId = await memcachedGet(req.header('accessToken'));
+    const loggedInUser = await memcachedGet(req.header('accessToken'));
+    console.log(loggedInUser);
 
     const scores = await Score.findAll({where: req.params, include: User, row: true});
     const response = scores.map((item) => {
         let newItem = item.dataValues;
         // if login user score, remove player name.
-        newItem.player = item.User.name === loggedInUserId ? "" : item.User.display;
+        // TODO これはClient sideで対応したほうがいいかも
+        newItem.player = item.User.unique === loggedInUser.unique ? "" : item.User.display;
+        newItem.mode = item.lntype;
         delete newItem.User;
         return newItem;
     });
@@ -84,14 +97,14 @@ app.post('/score', async (req, res) => {
     console.log("submit score");
 
     const memcachedGet = util.promisify(memcached.get).bind(memcached);
-    const loggedInUserId = await memcachedGet(req.header('accessToken'));
-    if (!loggedInUserId) {
+    const loggedInUser = await memcachedGet(req.header('accessToken'));
+    if (!loggedInUser) {
         console.warn("no login with push score.");
         res.status(401).send({status: 'ng, you need login.'});
         return ;
     }
-    memcached.toush(req.header('accessToken'));
-    
+    memcached.touch(req.header('accessToken'));
+
     console.log(req.body.playCount);
     let reqSong = await Song.findOne({where: {sha256: req.body.model.sha256} });
     if(!reqSong) {
@@ -100,7 +113,7 @@ app.post('/score', async (req, res) => {
         reqSong = await Song.create(model);
     }
     // submit score info
-    const user = await User.findOne({where: {name: loggedInUserId} });
+    const user = await User.findOne({where: {unique: loggedInUser.unique} });
     const lntype = req.body.model.hasUndefinedLN ? req.body.model.lntype : 0;
     const where = {where: {sha256: req.body.model.sha256, user_id: user.id, lntype}};
     let updateScore = req.body.score;
@@ -150,9 +163,19 @@ app.get('/table', (req, res) => {
     console.log(req.body);
     res.status(200).send({status: 'ok'});
 });
-app.get('/rival', (req, res) => {
-    console.log(req.body);
-    res.status(200).send({status: 'ok'});
+app.get('/rival/:unique', async (req, res) => {
+    console.log("get rival :" + req.params.unique);
+    // TODO hasManyやらつかった方法があるかもしれん User-rival-Userのコネクションの作り方がわからん
+    const user = await User.findOne({where: {unique: req.params.unique} });
+    const rivals = await Rival.findAll({where: {user_id: user.id}, include: User, row: true});
+    const response = rivals.map((item) => {
+        const newItem = {
+            id: item.User.unique,
+            name: item.User.display
+        };
+        return newItem;
+    });
+    res.status(200).send(response);
 });
 const convertClearType = (clearstr) => {
     switch(clearstr) {
@@ -173,12 +196,6 @@ const convertClearType = (clearstr) => {
 const calcExScore = (model) => {
     return 2 * (model.epg + model.lpg) + model.epg + model.lpg;
 };
-
-const getSession = () => {
-    const S="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    const N=16;
-    return Array.from(crypto.randomFillSync(new Uint8Array(N))).map((n)=>S[n%S.length]).join('');
-}
 
 const server = http.createServer(app);
 server.listen(port);

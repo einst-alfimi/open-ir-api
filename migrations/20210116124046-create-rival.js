@@ -1,32 +1,21 @@
 'use strict';
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable('Users', {
+    await queryInterface.createTable('Rivals', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      name: { // login_id
-        allowNull: false,
-        type: Sequelize.STRING
+      rival_id: { // follow rival_id(User.id)
+        type: Sequelize.INTEGER
       },
-      unique: { // unique_id for page
-        allowNull: false,
-        type: Sequelize.STRING
+      user_id: { // user_id(User.id)
+        type: Sequelize.INTEGER
       },
-      display: { // display name
-        allowNull: false,
-        type: Sequelize.STRING
-      },
-      password: {
-        allowNull: false,
-        type: Sequelize.STRING
-      },
-      status: { // 0:disable 1:enable 2:view only(convert lr2)
-        type: Sequelize.INTEGER,
-        defaultValue: 1
+      status: { // 0:disable 1:enable 
+        type: Sequelize.INTEGER
       },
       createdAt: {
         allowNull: false,
@@ -41,6 +30,6 @@ module.exports = {
     });
   },
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.dropTable('Users');
+    await queryInterface.dropTable('Rivals');
   }
 };

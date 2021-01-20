@@ -10,7 +10,7 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
+      Score.belongsTo(models.User, {foreignKey: 'user_id', targetKey: "id"});
     }
   };
   Score.init({
@@ -44,8 +44,5 @@ module.exports = (sequelize, DataTypes) => {
     sequelize,
     modelName: 'Score',
   });
-  Score.associate = models => {
-    Score.belongsTo(models.User, {foreignKey: 'user_id', targetKey: "id"});
-  }
   return Score;
 };
