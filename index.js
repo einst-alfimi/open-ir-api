@@ -51,6 +51,7 @@ app.get('/userscore/:unique', async (req, res) => {
     const scores = await Score.findAll({where: {"$User.unique$": req.params.unique}, include: User, row: true});
     res.status(200).send(scores.map((item) => {
         const newItem = item.dataValues;
+        // newItem.player = ""; 
         newItem.player = item.User.display; // IDなのか？
         // newItem.player = item.User.unique; 
         newItem.mode = item.lntype;
@@ -85,7 +86,9 @@ app.get('/userscore/:user_id/:sha256', async (req, res) => {
     const scores = await Score.findAll({where: {user_id: req.params.user_id, sha256: req.params.sha256}});
     const response = scores.map((item) => {
         let newItem = item.dataValues;
-        newItem.player = item.User.name;
+        // newItem.player = item.User.name;
+        newItem.player = ""; // 
+
         delete newItem.User;
         return newItem;
     });

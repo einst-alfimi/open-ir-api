@@ -9,9 +9,11 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       sha256: {
+        allowNull: false,
         type: Sequelize.STRING
       },
       user_id: {
+        allowNull: false,
         type: Sequelize.INTEGER
       },
       clear: {
@@ -26,67 +28,88 @@ module.exports = {
         // FullCombo 8
         // Perfect 9
         // Max 10
+        defaultValue: 0,
         type: Sequelize.INTEGER
       },
       lntype: {
         // 0=LN 1=CN 2=HCN
+        defaultValue: 0,
         type: Sequelize.INTEGER
       },
       epg: {
+        defaultValue: 0,
         type: Sequelize.INTEGER
       },
       lpg: {
+        defaultValue: 0,
         type: Sequelize.INTEGER
       },
       egr: {
+        defaultValue: 0,
         type: Sequelize.INTEGER
       },
       lgr: {
+        defaultValue: 0,
         type: Sequelize.INTEGER
       },
       egd: {
+        defaultValue: 0,
         type: Sequelize.INTEGER
       },
       lgd: {
+        defaultValue: 0,
         type: Sequelize.INTEGER
       },
       ebd: {
+        defaultValue: 0,
         type: Sequelize.INTEGER
       },
       lbd: {
+        defaultValue: 0,
         type: Sequelize.INTEGER
       },
       epr: {
+        defaultValue: 0,
         type: Sequelize.INTEGER
       },
       lpr: {
+        defaultValue: 0,
         type: Sequelize.INTEGER
       },
       ems: {
+        defaultValue: 0,
         type: Sequelize.INTEGER
       },
       lms: {
+        defaultValue: 0,
         type: Sequelize.INTEGER
       },
       maxcombo: {
+        defaultValue: 0,
         type: Sequelize.INTEGER
       },
       notes: {
+        defaultValue: 0,
         type: Sequelize.INTEGER
       },
       passnotes: {
+        defaultValue: 0,
         type: Sequelize.INTEGER
       },
       minbp: {
+        defaultValue: 0,
         type: Sequelize.INTEGER
       },
       option: {
+        defaultValue: 0,
         type: Sequelize.INTEGER
       },
       assist: {
+        defaultValue: 0,
         type: Sequelize.INTEGER
       },
       gauge: {
+        defaultValue: 0,
         type: Sequelize.INTEGER
       },
       deviceType: {
