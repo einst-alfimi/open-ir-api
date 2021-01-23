@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  node:
+    build: 
+      context: .
+      dockerfile: ./dockerfiles/node/Dockerfile
+    ports: 
+      - 8000:8000
+    command: sh -c "npm install && /bin/bash"
+    working_dir: /usr/src/app
+    volumes: 
+      - ./:/usr/src/app
+    tty: true
+    environment: 
+      - MYSQL_HOST=mariadb
+      - MYSQL_DATABASE=open_ir
+      - MYSQL_USER=mariadb
+      - MYSQL_PASSWORD=password
+      - NODE_ENV=development
+    depends_on:
+      - mariadb
+      - memcached
+  mariadb:
+    build:
+      context: .
+      dockerfile: ./dockerfiles/mariadb/Dockerfile
+    volumes: 
+      - ./db/:/var/lib/mysql
+    environment: 
+    - MYSQL_ROOT_PASSWORD=root
+    - MYSQL_DATABASE=open_ir
+    - MYSQL_USER=mariadb
+    - MYSQL_PASSWORD=password
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+  memcached:
+    build:
+      context: .
+      dockerfile: ./dockerfiles/memcached/Dockerfile

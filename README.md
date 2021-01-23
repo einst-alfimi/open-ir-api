@@ -21,3 +21,10 @@ for session.
 `npm run migrate`
 
 all reset.
+
+## docker
+
+1. `docker-compose up`
+2. `docker-compose exec node sh`
+3. `npm run migrate`
+4. `node index.js`
