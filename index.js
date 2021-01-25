@@ -6,13 +6,12 @@ const util = require('util');
 const Memcached = require('memcached');
 const memcached = new Memcached("localhost"); // TODO
 
-const crypto = require('crypto');
-
 const bcrypt = require('bcrypt');
 const User = require('./models').User;
 const Score = require('./models').Score;
 const Song = require('./models').Song;
 const Rival = require('./models').Rival;
+const Course = require('./models').Course;
 
 const strUtil = require('./util/str');
 
@@ -38,6 +37,8 @@ app.post('/login', async (req, res) => {
         return;
     } else {
         console.log(`${req.body.id} is logged in.`);
+        console.log(req.header('apiToken'));
+        console.log(req.header('jarToken'));
         const token = strUtil.randomStr();
         memcached.add(token, {id: req.body.id, unique: user.unique}, 1800, (err) => { /* stuff */ });
         res.status(200).send({status: 'ok', accessToken: token, unique: user.unique});
@@ -71,7 +72,7 @@ app.get('/score/:sha256/:lntype', async (req, res) => {
     const response = scores.map((item) => {
         let newItem = item.dataValues;
         // if login user score, remove player name.
-        // TODO これはClient sideで対応したほうがいいかも
+        // TODO これはClientで対応したほうがいいかも
         newItem.player = item.User.unique === loggedInUser.unique ? "" : item.User.display;
         newItem.mode = item.lntype;
         delete newItem.User;
@@ -153,13 +154,92 @@ app.post('/score', async (req, res) => {
     }
     res.status(200).send({status: 'ok'});
 });
-app.get('/course/:sha256', (req, res) => {
+app.get('/course/:sha256/:lntype', (req, res) => {
     console.log(req.params.sha256);
     console.log(req.body);
     res.status(200).send({status: 'ok'});
 });
-app.post('/course', (req, res) => {
-    console.log(req.body);
+app.post('/course', async (req, res) => {
+    console.log("submit course score");
+
+    const memcachedGet = util.promisify(memcached.get).bind(memcached);
+    const loggedInUser = await memcachedGet(req.header('accessToken'));
+    if (!loggedInUser) {
+        console.warn("no login with push score.");
+        res.status(401).send({status: 'ng, you need login.'});
+        return ;
+    }
+    memcached.touch(req.header('accessToken'));
+
+    let reqCourse = await Course.findOne({where: {sha256: req.body.sha256} });
+    if(!reqCourse) {
+        console.log("submit course song info");
+        const model = {};
+        model.name = req.body.model.name;
+        model.sha256 = req.body.sha256;
+        model.song1sha256 = req.body.chartSha256[0];
+        if (req.body.chartSha256[1]) {model.song2sha256 = req.body.chartSha256[1];}
+        if (req.body.chartSha256[2]) {model.song2sha256 = req.body.chartSha256[2];}
+        if (req.body.chartSha256[3]) {model.song2sha256 = req.body.chartSha256[3];}
+        if (req.body.chartSha256[4]) {model.song2sha256 = req.body.chartSha256[4];}
+        req.body.model.constraint.forEach(element => {
+            switch(element){
+                case 'CLASS': model.type = element; break
+                case 'MIRROR': model.type = element; break
+                case 'RANDOM': model.type = element; break 
+                case 'GAUGE_LR2': model.gauge = element; break
+                case 'GAUGE_5KEYS': model.gauge = element; break
+                case 'GAUGE_7KEYS': model.gauge = element; break
+                case 'GAUGE_9KEYS': model.gauge = element; break
+                case 'GAUGE_24KEYS': model.gauge = element; break
+                case 'LN': model.ln = element; break
+                case 'CN': model.ln = element; break
+                case 'HCN': model.ln = element; break
+                case 'NO_SPEED': model.speed = element; break
+                case 'NO_GOOD': model.judge = element; break
+                case 'NO_GREAT': model.judge = element; break
+            }
+        });
+        reqCourse = await Course.create(model);
+    }
+    // submit score info
+    const user = await User.findOne({where: {unique: loggedInUser.unique} });
+    const lntype = req.body.model.lntype; // コースはこれだけでいいはず
+    const where = {where: {sha256: req.body.sha256, user_id: user.id, lntype}};
+    let updateScore = req.body.score;
+    updateScore.lntype = lntype;
+    updateScore.sha256 = req.body.sha256;
+    updateScore.scoretype = 1; 
+    let localscore = await Score.findOne(where);
+    if (localscore) { 
+        console.log("update Score");
+        let hasUpdate = true;
+        if (calcExScore(localscore) > calcExScore(req.body.score)){
+            updateScore = localscore;
+            hasUpdate = false;
+        } 
+        updateScore.user_id = user.id;
+        // clear lump update, requestはnumberにコンバート
+        if (localscore.clear < convertClearType(req.body.score.clear)) {
+            updateScore.clear = convertClearType(req.body.score.clear); // 更新したとき
+            hasUpdate = true;
+        } else {
+            updateScore.clear = localscore.clear; // 現状のが良いとき
+            hasUpdate = hasUpdate ?? false;
+        }
+        if(hasUpdate) {
+            console.log("has update.");
+            localscore.update(updateScore, where);
+        } else {
+            console.log("has no update.");
+        }
+    } else {
+        // new score
+        console.log("create new Score");
+        updateScore.user_id = user.id;
+        updateScore.clear = convertClearType(updateScore.clear);
+        localscore = await Score.create(updateScore);
+    }
     res.status(200).send({status: 'ok'});
 });
 app.get('/table', (req, res) => {

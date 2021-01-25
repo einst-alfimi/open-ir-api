@@ -40,6 +40,7 @@ module.exports = (sequelize, DataTypes) => {
     judgeAlgorithm: DataTypes.STRING,
     rule: DataTypes.STRING,
     type: DataTypes.STRING,
+    scoretype: DataTypes.INTEGER,
   }, {
     sequelize,
     modelName: 'Score',

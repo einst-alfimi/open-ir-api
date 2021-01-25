@@ -124,6 +124,11 @@ module.exports = {
       type: {
         type: Sequelize.STRING
       },
+      scoretype: { // song=0, course=1
+        allowNull: false,
+        defaultValue: 0,
+        type: Sequelize.INTEGER
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,
