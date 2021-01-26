@@ -6,6 +6,8 @@
   "scripts": {
     "migrate-init": "npx sequelize-cli db:migrate:undo:all && npx sequelize-cli db:migrate &&  npx sequelize-cli db:seed:all ",
     "migrate": "npx sequelize-cli db:migrate &&  npx sequelize-cli db:seed:all ",
+    "start": "node index.js",
+    "start-watch": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -23,6 +25,7 @@
   },
   "devDependencies": {
     "dotenv": "^8.2.0",
+    "nodemon": "^2.0.7",
     "sequelize-cli": "^6.2.0"
   }
 }

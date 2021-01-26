@@ -282,4 +282,6 @@ const calcExScore = (model) => {
 
 const server = http.createServer(app);
 server.listen(port);
+console.log("Welcome! open-ir-api :" + port);
+console.log("test ");
 module.exports = app;
