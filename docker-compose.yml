@@ -7,7 +7,7 @@ services:
       dockerfile: ./dockerfiles/node/Dockerfile
     ports: 
       - 8000:8000
-    command: sh -c "npm install && /bin/bash"
+    command: sh -c "yarn install && /bin/bash"
     working_dir: /usr/src/app
     volumes: 
       - ./:/usr/src/app

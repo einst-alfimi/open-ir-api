@@ -4,7 +4,8 @@
   "description": "Internet ranking api for beatoraja ",
   "main": "index.js",
   "scripts": {
-    "migrate": " npx sequelize-cli db:migrate:undo:all && npx sequelize-cli db:migrate &&  npx sequelize-cli db:seed:all ",
+    "migrate-init": "npx sequelize-cli db:migrate:undo:all && npx sequelize-cli db:migrate &&  npx sequelize-cli db:seed:all ",
+    "migrate": "npx sequelize-cli db:migrate &&  npx sequelize-cli db:seed:all ",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -21,6 +22,7 @@
     "sequelize": "^6.3.5"
   },
   "devDependencies": {
-    "dotenv": "^8.2.0"
+    "dotenv": "^8.2.0",
+    "sequelize-cli": "^6.2.0"
   }
 }

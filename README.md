@@ -6,21 +6,21 @@ IR api for beatoraja
 
 - mariadb
 
-- Node
-
-node v14.15.4
-
-sequelize-cli
+- node v14.15.4
 
 - memcached
 
 for session.
 
+## installation
+
+`yarn install`
+
 ## migration
 
-`npm run migrate`
+`npm run migrate-init` all reset.
 
-all reset.
+`npm run migrate` only additional.
 
 ## docker
 
