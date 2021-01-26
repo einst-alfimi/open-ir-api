@@ -66,8 +66,6 @@ app.get('/score/:sha256/:lntype', async (req, res) => {
     console.log("find score by sha256");
     const memcachedGet = util.promisify(memcached.get).bind(memcached);
     const loggedInUser = await memcachedGet(req.header('accessToken'));
-    console.log(loggedInUser);
-
     const scores = await Score.findAll({where: req.params, include: User, row: true});
     const response = scores.map((item) => {
         let newItem = item.dataValues;
@@ -77,6 +75,13 @@ app.get('/score/:sha256/:lntype', async (req, res) => {
         newItem.mode = item.lntype;
         delete newItem.User;
         return newItem;
+    });
+    response.sort((a,b) => {
+        if( (a.egr + a.lgr) + (a.epg + a.lpg) * 2 > (b.egr + b.lgr) + (b.epg + b.lpg) * 2 ) return -1;
+        if( (a.egr + a.lgr) + (a.epg + a.lpg) * 2 < (b.egr + b.lgr) + (b.epg + b.lpg) * 2 ) return 1; 
+        if( Date.parse(a.scoreUpdatedAt) < Date.parse(b.scoreUpdatedAt)) return -1;
+        if( Date.parse(a.scoreUpdatedAt) > Date.parse(b.scoreUpdatedAt)) return 1;
+        return 0;
     });
     res.status(200).send(response);
 });
@@ -107,6 +112,8 @@ app.post('/score', async (req, res) => {
         res.status(401).send({status: 'ng, you need login.'});
         return ;
     }
+    console.log("submit score");
+
     memcached.touch(req.header('accessToken'));
 
     console.log(req.body.playCount);
@@ -217,7 +224,9 @@ app.post('/course', async (req, res) => {
         if (calcExScore(localscore) > calcExScore(req.body.score)){
             updateScore = localscore;
             hasUpdate = false;
-        } 
+        } else {
+            updateScore.scoreUpdatedAt = new Date(); // スコア更新ある場合のみ日付アップデート
+        }
         updateScore.user_id = user.id;
         // clear lump update, requestはnumberにコンバート
         if (localscore.clear < convertClearType(req.body.score.clear)) {
@@ -283,5 +292,4 @@ const calcExScore = (model) => {
 const server = http.createServer(app);
 server.listen(port);
 console.log("Welcome! open-ir-api :" + port);
-console.log("test ");
 module.exports = app;

@@ -129,6 +129,11 @@ module.exports = {
         defaultValue: 0,
         type: Sequelize.INTEGER
       },
+      scoreUpdatedAt: {
+        allowNull: false,
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,
